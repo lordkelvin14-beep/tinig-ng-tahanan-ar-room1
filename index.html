@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tinig ng Tahanan AR</title>
+    
+    <style>
+      @font-face {
+        font-family: 'Eggmunds';
+        src: url('./fonts/eggmunds.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      #door-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Eggmunds', sans-serif;
+        pointer-events: auto;
+        overflow: hidden;
+        perspective: 1200px;
+      }
+
+      .door {
+        position: absolute;
+        top: 0;
+        width: 50vw;
+        height: 100vh;
+        transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+        backface-visibility: hidden;
+      }
+
+      .door-left { 
+        left: 0; 
+        transform-origin: left center;
+        background: url('./images/door-left.png') no-repeat center center / cover;
+        border-right: 2px solid #f97316;
+      }
+
+      .door-right { 
+        right: 0; 
+        transform-origin: right center;
+        background: url('./images/door-right.png') no-repeat center center / cover;
+        border-left: 2px solid #f97316;
+      }
+
+      .doors-open .door-left { 
+        transform: rotateY(-100deg); 
+      }
+      .doors-open .door-right { 
+        transform: rotateY(100deg); 
+      }
+
+      .door-content {
+        position: relative;
+        z-index: 2;
+        background: #1d4ed8;
+        padding: 30px 24px;
+        border-radius: 20px;
+        text-align: center;
+        width: 85%;
+        max-width: 340px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        border: 3px solid #f97316;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+
+      .doors-open .door-content {
+        opacity: 0;
+        transform: scale(0.9);
+        pointer-events: none;
+      }
+
+      .door-content h1 {
+        font-family: 'Eggmunds', sans-serif !important;
+        margin: 0 0 10px 0;
+        font-size: 1.8rem;
+        color: #f97316;
+      }
+
+      .door-content p {
+        font-size: 1rem;
+        color: #ffffff;
+        line-height: 1.4;
+        margin-bottom: 20px;
+      }
+
+      #start-btn {
+        background: #f97316;
+        color: white;
+        border: none;
+        padding: 14px 24px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        font-family: 'Eggmunds', sans-serif;
+        border-radius: 12px;
+        cursor: pointer;
+        width: 100%;
+        box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
+        transition: background 0.2s, transform 0.1s;
+      }
+
+      #start-btn:active {
+        background: #ea580c;
+        transform: scale(0.98);
+      }
+
+      /* Bottom Vocabulary Controls */
+      #controls-bar {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        width: 94%;
+        max-width: 640px;
+        pointer-events: auto;
+      }
+
+      .prop-btn {
+        background: #1d4ed8;
+        color: #ffffff;
+        border: 3px solid #f97316;
+        padding: 14px 20px;
+        font-family: 'Eggmunds', sans-serif;
+        font-size: 1.2rem;
+        min-width: 108px;
+        border-radius: 16px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        transition: transform 0.12s ease, background 0.2s ease, opacity 0.2s ease;
+      }
+
+      .prop-btn:active {
+        transform: scale(0.95);
+      }
+
+      .prop-btn.unlocked {
+        background: #16a34a;
+        border-color: #bbf7d0;
+      }
+
+      .btn-emoji {
+        font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        font-size: 1.35rem;
+        line-height: 1;
+      }
+    </style>
+
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <script>
+      const PROP_CONFIG = {
+        mesa: {
+          meshName: 'Mesa',
+          clipName: 'AnimMesa',
+          audioId: '#audio-mesa'
+        },
+        upuan: {
+          meshName: 'PropUpuan',
+          clipName: 'AnimUpuan',
+          audioId: '#audio-upuan'
+        },
+        turon: {
+          meshName: 'TuronandPlate',
+          clipName: 'AnimTuronandPlate',
+          audioId: '#audio-turon'
+        },
+        fan: {
+          meshName: 'Fan',
+          clipName: 'AnimFan',
+          audioId: '#audio-fan'
+        },
+        gatas: {
+          meshName: 'MilkCarton',
+          clipName: 'MilkCartonAction',
+          audioId: '#audio-gatas'
+        },
+        sopa: {
+          meshName: 'Sopa',
+          clipName: 'AnimCouch',
+          audioId: '#audio-sopa'
+        },
+        medal: {
+          meshName: 'Medal',
+          clipName: 'AnimMedal',
+          audioId: '#audio-medal'
+        }
+      };
+
+      const NOTE_FREQS = {
+        mesa: 261.63,   // C4
+        upuan: 293.66,  // D4
+        turon: 329.63,  // E4
+        fan: 349.23,    // F4
+        gatas: 392.00,  // G4
+        sopa: 440.00,   // A4
+        medal: 493.88   // B4
+      };
+
+      let audioCtx = null;
+
+      function playButtonNote(key) {
+        const freq = NOTE_FREQS[key] || 392.00;
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.36);
+      }
+
+      AFRAME.registerComponent('room-controller', {
+        init: function () {
+          this.mixer = null;
+          this.clips = [];
+          this.meshes = {};
+          this.playedOnce = {}; // Tracks whether each prop has already animated once
+
+          this.el.addEventListener('model-loaded', (e) => {
+            const model = e.detail.model;
+            this.clips = e.detail.model.animations || this.el.getObject3D('mesh').animations || [];
+            this.mixer = new THREE.AnimationMixer(model);
+
+            console.log('Loaded clips:', this.clips.map(c => c.name));
+
+            // Hide all props initially until their buttons are pressed
+            Object.entries(PROP_CONFIG).forEach(([key, cfg]) => {
+              const obj = model.getObjectByName(cfg.meshName);
+              if (obj) {
+                obj.visible = false;
+                this.meshes[key] = obj;
+              } else {
+                console.warn(`Mesh not found in GLB: "${cfg.meshName}"`);
+              }
+            });
+          });
+        },
+
+        tick: function (time, delta) {
+          if (this.mixer) {
+            this.mixer.update(delta / 1000);
+          }
+        },
+
+        triggerProp: function (key) {
+          const cfg = PROP_CONFIG[key];
+          if (!cfg) return;
+
+          const mesh = this.meshes[key];
+          if (mesh) {
+            mesh.visible = true;
+          }
+
+          // Play speech audio every time button is pressed
+          const audioEl = document.querySelector(cfg.audioId);
+          if (audioEl) {
+            audioEl.currentTime = 0;
+            audioEl.play().catch(err => console.warn('Audio error:', err));
+          }
+
+          // Play animation ONLY once and hold on final frame (no looping, no replay)
+          if (!this.playedOnce[key] && this.mixer) {
+            const clip = THREE.AnimationClip.findByName(this.clips, cfg.clipName);
+            if (clip) {
+              const action = this.mixer.clipAction(clip);
+              action.reset();
+              action.setLoop(THREE.LoopOnce, 1);
+              action.clampWhenFinished = true;
+              action.play();
+              this.playedOnce[key] = true;
+            } else {
+              console.warn(`Animation clip not found in GLB: "${cfg.clipName}"`);
+            }
+          }
+        }
+      });
+
+      function onPropButtonClick(key, btnEl) {
+        playButtonNote(key);
+        const roomEntity = document.querySelector('#room-model');
+        if (roomEntity && roomEntity.components['room-controller']) {
+          roomEntity.components['room-controller'].triggerProp(key);
+          btnEl.classList.add('unlocked');
+        }
+      }
+
+      function openDoors() {
+        const overlay = document.getElementById('door-overlay');
+        overlay.classList.add('doors-open');
+
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 1200);
+
+        const doorAudio = document.querySelector('#menu-door-audio');
+        if (doorAudio) {
+          doorAudio.currentTime = 0;
+          doorAudio.play().catch(e => console.log("Audio playback error:", e));
+        }
+      }
+    </script>
+  </head>
+  
+  <body style="margin: 0; overflow: hidden;">
+    <!-- Audio Assets -->
+    <audio id="house-jingle" src="./audio/house_jingle.mp3" preload="auto"></audio>
+    <audio id="menu-door-audio" src="./audio/Opening-Door.wav" preload="auto"></audio>
+
+
+    <audio id="audio-mesa" src="./audio/mesa.mp3" preload="auto"></audio>
+    <audio id="audio-upuan" src="./audio/upuan.mp3" preload="auto"></audio>
+    <audio id="audio-turon" src="./audio/turon.mp3" preload="auto"></audio>
+    <audio id="audio-fan" src="./audio/fan.mp3" preload="auto"></audio>
+    <audio id="audio-gatas" src="./audio/gatas.mp3" preload="auto"></audio>
+    <audio id="audio-sopa" src="./audio/sopa.mp3" preload="auto"></audio>
+    <audio id="audio-medal" src="./audio/medal.mp3" preload="auto"></audio>
+
+    <!-- Thematic Room Door Overlay -->
+    <div id="door-overlay">
+      <div class="door door-left"></div>
+      <div class="door door-right"></div>
+      
+      <div class="door-content">
+        <h1>Tinig ng Tahanan</h1>
+        <p>Magandang araw! 
+        1.Itapat ang inyong camera sa ilustrayon 2.Gabayin ang inyong anak na mabigkas ang mga salitang nakalatag 3.Kapag tama ang pagka-bigkas, pindutin ang button para i-play ang animation.</p>
+        <button id="start-btn" onclick="openDoors()">Buksan ang Pinto</button>
+      </div>
+    </div>
+
+    <!-- Bottom HUD Buttons -->
+    <div id="controls-bar">
+      <button class="prop-btn" onclick="onPropButtonClick('mesa', this)"><span class="btn-emoji">🪵</span> Me-sa</button>
+      <button class="prop-btn" onclick="onPropButtonClick('upuan', this)"><span class="btn-emoji">🪑</span> U-pu-an</button>
+      <button class="prop-btn" onclick="onPropButtonClick('turon', this)"><span class="btn-emoji">🍌</span> Tu-ron</button>
+      <button class="prop-btn" onclick="onPropButtonClick('fan', this)"><span class="btn-emoji">🌀</span> Fan</button>
+      <button class="prop-btn" onclick="onPropButtonClick('gatas', this)"><span class="btn-emoji">🥛</span> Ga-tas</button>
+      <button class="prop-btn" onclick="onPropButtonClick('sopa', this)"><span class="btn-emoji">🛋️</span> So-pa</button>
+      <button class="prop-btn" onclick="onPropButtonClick('medal', this)"><span class="btn-emoji">🏅</span> Me-dal</button>
+    </div>
+
+    <!-- AR Scene -->
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; filterMinCF : 0.0001; filterBeta: 0.001; warmupTolerance: 10; missTolerance: 10;"
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights: true" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+
+      <a-camera 
+        position="0 0 0" 
+        look-controls="enabled: false" 
+        cursor="fuse: false; rayOrigin: mouse;" 
+        raycaster="far: 10000; objects: .clickable">
+      </a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-gltf-model 
+          id="room-model"
+          src="./room-1-livingroom.glb" 
+          position="0 0 0" 
+          scale="0.2 0.2 0.2" 
+          rotation="90 0 0"
+          room-controller>
+        </a-gltf-model>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
