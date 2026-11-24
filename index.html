@@ -4,26 +4,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tinig ng Tahanan AR</title>
     
-    <style>
-      @font-face {
-        font-family: 'Eggmunds';
-        src: url('./fonts/eggmunds.ttf') format('truetype');
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 
+    <style>
       #door-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         z-index: 9999;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-family: 'Eggmunds', sans-serif;
+        padding: 16px;
+        box-sizing: border-box;
+        font-family: 'Montserrat', sans-serif;
         pointer-events: auto;
         overflow: hidden;
         perspective: 1200px;
@@ -33,7 +29,7 @@
         position: absolute;
         top: 0;
         width: 50vw;
-        height: 100vh;
+        height: 100%;
         transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1;
         backface-visibility: hidden;
@@ -43,14 +39,14 @@
         left: 0; 
         transform-origin: left center;
         background: url('./images/door-left.png') no-repeat center center / cover;
-        border-right: 2px solid #f97316;
+        border-right: 3px solid #D96B27;
       }
 
       .door-right { 
         right: 0; 
         transform-origin: right center;
         background: url('./images/door-right.png') no-repeat center center / cover;
-        border-left: 2px solid #f97316;
+        border-left: 3px solid #D96B27;
       }
 
       .doors-open .door-left { 
@@ -63,14 +59,17 @@
       .door-content {
         position: relative;
         z-index: 2;
-        background: #1d4ed8;
-        padding: 30px 24px;
-        border-radius: 20px;
+        background: #FDE8C8;
+        padding: 28px 24px;
+        border-radius: 22px;
         text-align: center;
-        width: 85%;
-        max-width: 340px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-        border: 3px solid #f97316;
+        width: 100%;
+        max-width: 380px;
+        max-height: 88dvh;
+        overflow-y: auto;
+        box-sizing: border-box;
+        box-shadow: 0 15px 35px rgba(78, 42, 20, 0.45);
+        border: 3px solid #D96B27;
         transition: opacity 0.5s ease, transform 0.5s ease;
       }
 
@@ -81,71 +80,99 @@
       }
 
       .door-content h1 {
-        font-family: 'Eggmunds', sans-serif !important;
-        margin: 0 0 10px 0;
-        font-size: 1.8rem;
-        color: #f97316;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+        font-size: 1.65rem;
+        color: #D96B27;
+        text-shadow: 0 1px 0 rgba(78, 42, 20, 0.15);
       }
 
-      .door-content p {
+      .door-greeting {
+        font-family: 'Montserrat', sans-serif;
         font-size: 1rem;
-        color: #ffffff;
-        line-height: 1.4;
-        margin-bottom: 20px;
+        font-weight: 700;
+        color: #4E2A14;
+        margin: 0 0 14px 0;
+      }
+
+      .door-steps {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.94rem;
+        font-weight: 500;
+        color: #4E2A14;
+        line-height: 1.45;
+        text-align: left;
+        margin: 0 0 22px 0;
+        padding-left: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .door-steps li::marker {
+        font-weight: 800;
+        color: #D96B27;
       }
 
       #start-btn {
-        background: #f97316;
-        color: white;
-        border: none;
-        padding: 14px 24px;
-        font-size: 1.1rem;
-        font-weight: bold;
-        font-family: 'Eggmunds', sans-serif;
-        border-radius: 12px;
+        background: #D96B27;
+        color: #FFFDF9;
+        border: 2px solid #4E2A14;
+        padding: 15px 24px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        font-family: 'Montserrat', sans-serif;
+        border-radius: 14px;
         cursor: pointer;
         width: 100%;
-        box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
+        min-height: 50px;
+        touch-action: manipulation;
+        box-shadow: 0 4px 10px rgba(78, 42, 20, 0.25);
         transition: background 0.2s, transform 0.1s;
       }
 
       #start-btn:active {
-        background: #ea580c;
+        background: #B85418;
         transform: scale(0.98);
       }
 
-      /* Bottom Vocabulary Controls */
+      /* Bottom Vocabulary Controls (Mobile-Optimized) */
       #controls-bar {
         position: fixed;
-        bottom: calc(20px + env(safe-area-inset-bottom));
+        bottom: calc(14px + env(safe-area-inset-bottom));
         left: 50%;
         transform: translateX(-50%);
         z-index: 1000;
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 12px;
-        width: 94%;
+        gap: 8px;
+        width: 96%;
         max-width: 640px;
         pointer-events: auto;
       }
 
       .prop-btn {
-        background: #1d4ed8;
-        color: #ffffff;
-        border: 3px solid #f97316;
-        padding: 14px 20px;
-        font-family: 'Eggmunds', sans-serif;
-        font-size: 1.2rem;
-        min-width: 108px;
-        border-radius: 16px;
+        background: #FDE8C8;
+        color: #4E2A14;
+        border: 2.5px solid #D96B27;
+        padding: 10px 14px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.98rem;
+        min-height: 46px;
+        border-radius: 14px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-        transition: transform 0.12s ease, background 0.2s ease, opacity 0.2s ease;
+        gap: 6px;
+        flex: 0 1 auto;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 4px 10px rgba(78, 42, 20, 0.3);
+        transition: transform 0.12s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
       }
 
       .prop-btn:active {
@@ -153,14 +180,44 @@
       }
 
       .prop-btn.unlocked {
-        background: #16a34a;
-        border-color: #bbf7d0;
+        background: #5B8A3C;
+        color: #FFFDF9;
+        border-color: #E8A838;
       }
 
       .btn-emoji {
         font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-        font-size: 1.35rem;
+        font-size: 1.2rem;
         line-height: 1;
+      }
+
+      /* Compact mobile adjustments for rooms with 5–7 buttons */
+      @media (max-width: 480px) {
+        .door-content {
+          padding: 24px 18px;
+          max-width: 340px;
+        }
+        .door-content h1 {
+          font-size: 1.45rem;
+        }
+        .door-steps {
+          font-size: 0.88rem;
+          gap: 8px;
+          margin-bottom: 18px;
+        }
+        #controls-bar {
+          gap: 7px;
+          width: 96%;
+        }
+        .prop-btn {
+          padding: 9px 12px;
+          font-size: 0.9rem;
+          min-height: 44px;
+          border-radius: 12px;
+        }
+        .btn-emoji {
+          font-size: 1.1rem;
+        }
       }
     </style>
 
@@ -342,7 +399,6 @@
     <audio id="house-jingle" src="./audio/house_jingle.mp3" preload="auto"></audio>
     <audio id="menu-door-audio" src="./audio/Opening-Door.wav" preload="auto"></audio>
 
-
     <audio id="audio-mesa" src="./audio/mesa.mp3" preload="auto"></audio>
     <audio id="audio-upuan" src="./audio/upuan.mp3" preload="auto"></audio>
     <audio id="audio-turon" src="./audio/turon.mp3" preload="auto"></audio>
@@ -358,8 +414,12 @@
       
       <div class="door-content">
         <h1>Tinig ng Tahanan</h1>
-        <p>Magandang araw! 
-        1.Itapat ang inyong camera sa ilustrayon 2.Gabayin ang inyong anak na mabigkas ang mga salitang nakalatag 3.Kapag tama ang pagka-bigkas, pindutin ang button para i-play ang animation.</p>
+        <p class="door-greeting">Magandang araw!</p>
+        <ol class="door-steps">
+          <li>Itapat ang inyong camera sa ilustrasyon.</li>
+          <li>Gabayin ang inyong anak na mabigkas ang mga salitang nakalatag.</li>
+          <li>Kapag tama ang pagka-bigkas, pindutin ang button para i-play ang animation.</li>
+        </ol>
         <button id="start-btn" onclick="openDoors()">Buksan ang Pinto</button>
       </div>
     </div>
