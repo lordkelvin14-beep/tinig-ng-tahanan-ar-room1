@@ -137,7 +137,40 @@
         transform: scale(0.98);
       }
 
-      /* Bottom Vocabulary Controls (Mobile-Optimized) */
+      /* Graphics Quality Toggle Pill */
+      #gfx-toggle-btn {
+        position: fixed;
+        top: calc(14px + env(safe-area-inset-top));
+        right: 14px;
+        z-index: 1000;
+        background: #FDE8C8;
+        color: #4E2A14;
+        border: 2px solid #D96B27;
+        padding: 8px 13px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.82rem;
+        border-radius: 999px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 4px 10px rgba(78, 42, 20, 0.28);
+        transition: transform 0.12s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+
+      #gfx-toggle-btn:active {
+        transform: scale(0.95);
+      }
+
+      #gfx-toggle-btn.low-mode {
+        background: #4E2A14;
+        color: #FDE8C8;
+        border-color: #E8A838;
+      }
+
       #controls-bar {
         position: fixed;
         bottom: calc(14px + env(safe-area-inset-bottom));
@@ -191,7 +224,6 @@
         line-height: 1;
       }
 
-      /* Compact mobile adjustments for rooms with 5–7 buttons */
       @media (max-width: 480px) {
         .door-content {
           padding: 24px 18px;
@@ -204,6 +236,10 @@
           font-size: 0.88rem;
           gap: 8px;
           margin-bottom: 18px;
+        }
+        #gfx-toggle-btn {
+          padding: 7px 11px;
+          font-size: 0.78rem;
         }
         #controls-bar {
           gap: 7px;
@@ -307,7 +343,7 @@
           this.mixer = null;
           this.clips = [];
           this.meshes = {};
-          this.playedOnce = {}; // Tracks whether each prop has already animated once
+          this.playedOnce = {}; 
 
           this.el.addEventListener('model-loaded', (e) => {
             const model = e.detail.model;
@@ -391,6 +427,49 @@
           doorAudio.play().catch(e => console.log("Audio playback error:", e));
         }
       }
+
+      // Graphics Quality Controller ('high' vs 'low')
+      let currentGfxQuality = localStorage.getItem('tnt_gfx_quality') || 'high';
+
+      function applyGraphicsQuality(quality) {
+        const sceneEl = document.querySelector('a-scene');
+        const btn = document.getElementById('gfx-toggle-btn');
+
+        if (btn) {
+          if (quality === 'low') {
+            btn.innerHTML = '<span class="btn-emoji"></span> Graphics: Low';
+            btn.classList.add('low-mode');
+          } else {
+            btn.innerHTML = '<span class="btn-emoji"></span> Graphics: High';
+            btn.classList.remove('low-mode');
+          }
+        }
+
+        if (sceneEl && sceneEl.renderer) {
+          const renderer = sceneEl.renderer;
+          const targetDpr = quality === 'low' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+          renderer.setPixelRatio(targetDpr);
+          renderer.setSize(window.innerWidth, window.innerHeight, false);
+        }
+
+        localStorage.setItem('tnt_gfx_quality', quality);
+      }
+
+      function toggleGraphicsQuality() {
+        currentGfxQuality = currentGfxQuality === 'high' ? 'low' : 'high';
+        applyGraphicsQuality(currentGfxQuality);
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const sceneEl = document.querySelector('a-scene');
+        if (sceneEl) {
+          if (sceneEl.hasLoaded) {
+            applyGraphicsQuality(currentGfxQuality);
+          } else {
+            sceneEl.addEventListener('loaded', () => applyGraphicsQuality(currentGfxQuality));
+          }
+        }
+      });
     </script>
   </head>
   
@@ -423,6 +502,11 @@
         <button id="start-btn" onclick="openDoors()">Buksan ang Pinto</button>
       </div>
     </div>
+
+
+    <button id="gfx-toggle-btn" onclick="toggleGraphicsQuality()" aria-label="Toggle Graphics Quality">
+      <span class="btn-emoji"></span> Graphics: High
+    </button>
 
     <!-- Bottom HUD Buttons -->
     <div id="controls-bar">
